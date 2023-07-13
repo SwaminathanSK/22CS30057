@@ -1,11 +1,13 @@
-import os
+from argparse import ArgumentParser
 from random import choice
-from time import sleep
+import os
+import cv2
 
 import vizdoom as vzd
 
-
 if __name__ == "__main__":
+	
+	
     # Create DoomGame instance. It will run the game and communicate with you.
     game = vzd.DoomGame()
 
@@ -81,7 +83,7 @@ if __name__ == "__main__":
     )
 
     # Causes episodes to finish after 200 tics (actions)
-    game.set_episode_timeout(200)
+    game.set_episode_timeout(2000)
 
     # Makes episodes start after 10 tics (~after raising the weapon)
     game.set_episode_start_time(10)
@@ -102,89 +104,52 @@ if __name__ == "__main__":
     # Sets the living reward (for each move) to -1
     game.set_living_reward(-1)
 
-    # Sets ViZDoom mode (PLAYER, ASYNC_PLAYER, SPECTATOR, ASYNC_SPECTATOR, PLAYER mode is default)
-    game.set_mode(vzd.Mode.PLAYER)
+    # Set cv2 friendly format.
+    game.set_screen_format(vzd.ScreenFormat.BGR24)
 
-    # Enables engine output to console, in case of a problem this might provide additional information.
-    # game.set_console_enabled(True)
+    # Enables rendering of automap.
+    game.set_automap_buffer_enabled(True)
 
-    # Initialize the game. Further configuration won't take any effect from now on.
+    # All map's geometry and objects will be displayed.
+    game.set_automap_mode(vzd.AutomapMode.OBJECTS_WITH_SIZE)
+
+    game.add_available_game_variable(vzd.GameVariable.POSITION_X)
+    game.add_available_game_variable(vzd.GameVariable.POSITION_Y)
+    game.add_available_game_variable(vzd.GameVariable.POSITION_Z)
+
+    # Disables game window (FPP view), we just want to see the automap.
+    game.set_window_visible(False)
+
+    # This CVAR can be used to make a map follow a player.
+    game.add_game_args("+am_followplayer 1")
+
+    # This CVAR controls scale of rendered map (higher valuer means bigger zoom).
+    game.add_game_args("+viz_am_scale 10")
+
+    # This CVAR shows the whole map centered (overrides am_followplayer and viz_am_scale).
+    game.add_game_args("+viz_am_center 1")
+
+    # Map's colors can be changed using CVARs, full list is available here: https://zdoom.org/wiki/CVARs:Automap#am_backcolor
+    game.add_game_args("+am_backcolor ff0000 +am_gridcolor  ffffff +am_fdwallcolor ffffff +am_efwallcolor ffffff ")
+    # +am_yourcolor 00ff00
     game.init()
 
-    # Define some actions. Each list entry corresponds to declared buttons:
-    # MOVE_LEFT, MOVE_RIGHT, ATTACK
-    game.get_available_buttons_size() # can be used to check the number of available buttons.
-    # 5 more combinations are naturally possible but only 3 are included for transparency when watching.
-    actions = [[True, False, False], [False, True, False], [False, False, True]]
+    seen_in_this_episode = set()
+    game.new_episode()
 
-    # Run this many episodes
-    episodes = 3
+    state = game.get_state()
+    map = state.automap_buffer
 
-    # Sets time that will pause the engine after each action (in seconds)
-    # Without this everything would go too fast for you to keep track of what's happening.
-    sleep_time = 1.0 / vzd.DEFAULT_TICRATE  # = 0.028
-
-    for i in range(episodes):
-        print("Episode #" + str(i + 1))
-
-        # Starts a new episode. It is not needed right after init() but it doesn't cost much. At least the loop is nicer.
-        game.new_episode()
-
-        while not game.is_episode_finished():
-
-            # Gets the state
-            state = game.get_state()
-
-            # Which consists of:
-            n = state.number
-            vars = state.game_variables
-
-            # Different buffers (screens, depth, labels, automap, audio)
-            # Expect of screen buffer some may be None if not first enabled.
-            screen_buf = state.screen_buffer
-            depth_buf = state.depth_buffer
-            labels_buf = state.labels_buffer
-            automap_buf = state.automap_buffer
-            audio_buf = state.audio_buffer
-
-            # List of labeled objects visible in the frame, may be None if not first enabled.
-            labels = state.labels
-
-            # List of all objects (enemies, pickups, etc.) present in the current episode, may be None if not first enabled
-            objects = state.objects
-
-            # List of all sectors (map geometry), may be None if not first enabled.
-            sectors = state.sectors
-
-            # Games variables can be also accessed via
-            # (including the ones that were not added as available to a game state):
-            # game.get_game_variable(GameVariable.AMMO2)
-
-            # Makes an action (here random one) and returns a reward.
-            r = game.make_action([False, False, False])
-
-            # Makes a "prolonged" action and skip frames:
-            # skiprate = 4
-            # r = game.make_action(choice(actions), skiprate)
-
-            # The same could be achieved with:
-            # game.set_action(choice(actions))
-            # game.advance_action(skiprate)
-            # r = game.get_last_reward()
-
-            # Prints state's game variables and reward.
-            print("State #" + str(n))
-            print("Game variables:", vars)
-            print("Reward:", r)
-            print("=====================")
-
-            if sleep_time > 0:
-                sleep(sleep_time)
-
-        # Check how the episode went.
-        print("Episode finished.")
-        print("Total reward:", game.get_total_reward())
-        print("************************")
-
-    # It will be done automatically anyway but sometimes you need to do it in the middle of the program...
-    game.close()
+    for i in range(map.shape[0]):
+        for j in range(map.shape[1]):
+            if (map[i][j] == (255, 0, 0)).all():
+                continue
+            elif (map[i][j] == (255, 255, 255)).all():
+                continue
+            elif (map[i][j] != (0, 0, 255)).any():
+                map[i][j] = (0, 0, 0)
+    if map is not None:
+        cv2.imshow("ViZDoom Automap Buffer", map)
+    cv2.waitKey(10000)
+    cv2.imwrite("processed_map.png", map)
+    cv2.destroyAllWindows()
