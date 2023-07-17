@@ -175,7 +175,8 @@ class RRT_star():
         for x in range(x0, x1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                self.config_space.remove((x, y))
+                if (x, y) in self.config_space:
+                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
             if D > 0:
@@ -184,7 +185,7 @@ class RRT_star():
             else:
                 D = D + 2*dy
         cv2.imshow("plot", self.image)
-        cv2.waitKey(5)
+        cv2.waitKey(1)
         return True
 
     def drawLineHigh(self, x0, y0, x1, y1, image):
@@ -199,6 +200,8 @@ class RRT_star():
         for y in range(y0, y1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
+                if (x, y) in self.config_space:
+                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
             if D > 0:
@@ -207,7 +210,7 @@ class RRT_star():
             else:
                 D = D + 2 * dx
         cv2.imshow("plot", self.image)
-        cv2.waitKey(5)
+        cv2.waitKey(1)
         return True
 
     def drawVer(self, x0, y0, x1, y1, image):
@@ -215,10 +218,12 @@ class RRT_star():
         for y in range(y0, y1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
+                if (x, y) in self.config_space:
+                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
         cv2.imshow("plot", self.image)
-        cv2.waitKey(5)
+        cv2.waitKey(1)
         return True
 
     def drawHor(self, x0, y0, x1, y1, image):
@@ -226,10 +231,12 @@ class RRT_star():
         for x in range(x0, x1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
+                if (x, y) in self.config_space:
+                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
         cv2.imshow("plot", self.image)
-        cv2.waitKey(5)
+        cv2.waitKey(1)
         return True
 
     def erase_line(self, point0, point1, image):
@@ -375,6 +382,7 @@ class RRT_star():
                                     self.draw_line((i, j), point1, self.image)
 
             number += 1
+        # cv2.imshow("plot", self.image)
         cv2.waitKey(10000)
         cv2.destroyAllWindows()
 
