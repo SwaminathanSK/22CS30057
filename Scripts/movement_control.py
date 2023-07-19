@@ -27,7 +27,7 @@ def on_press(key):
         if key.char == 'q':
             cv2.destroyAllWindows()
             game.close()
-            return False  # Stop the listener
+            return False
     except AttributeError:
         pass
 
@@ -38,18 +38,14 @@ def achieved(agent_x, agent_y, target_x, target_y):
 
 
 def get_angle_from_agent(agent_angle_degrees, agent_x, agent_y, target_x, target_y):
-    # Calculate the relative x and y distance from the agent to the target point
     delta_x = target_x - agent_x
     delta_y = target_y - agent_y
 
-    # Calculate the angle between the agent's facing direction and the target point
     target_angle_radians = math.atan2(delta_y, delta_x)
     target_angle_degrees = math.degrees(target_angle_radians)
 
-    # Adjust the angle to be relative to the agent's facing direction
     relative_angle_degrees = target_angle_degrees - agent_angle_degrees
 
-    # Ensure the angle is within the range of -180 to 180 degrees
     while relative_angle_degrees <= -180:
         relative_angle_degrees += 360
     while relative_angle_degrees > 180:
@@ -58,7 +54,6 @@ def get_angle_from_agent(agent_angle_degrees, agent_x, agent_y, target_x, target
     return relative_angle_degrees
 
 def get_distance_to_next(agent_x, agent_y, target_x, target_y):
-    # Calculate the relative x and y distance from the agent to the target point
     delta_x = target_x - agent_x
     delta_y = target_y - agent_y
 
