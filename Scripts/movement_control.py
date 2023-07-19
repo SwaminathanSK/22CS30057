@@ -8,6 +8,20 @@ import cv2
 import math
 from pynput import keyboard
 
+class PIDController:
+    def __init__(self, kp=0.001, ki=0.001, kd=0.2):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.prev_error = 0
+        self.integral = 0
+
+    def update(self, error):
+        self.integral += error
+        derivative = error - self.prev_error
+        self.prev_error = error
+        return self.kp * error + self.ki * self.integral + self.kd * derivative
+
 def on_press(key):
     try:
         if key.char == 'q':
@@ -135,6 +149,7 @@ if __name__ == "__main__":
     game.set_window_visible(True)
 
     game.init()
+    pid_controller = PIDController()
 
     episodes = 10
     sleep_time = 0.028
@@ -170,7 +185,7 @@ if __name__ == "__main__":
 
             time = game.get_episode_time()
 
-            if angle_to_next > 10:
+            '''if angle_to_next > 10:
                 action[2] = -3
             elif 5 < angle_to_next and angle_to_next < 10:
                 action[2] = 0
@@ -185,7 +200,11 @@ if __name__ == "__main__":
                 else:
                     action[0] = 0
             elif angle_to_next < -10:
-                action[2] = 3
+                action[2] = 3'''
+
+            action[2] = -pid_controller.update(abs(angle_to_next))
+            if angle_to_next < -10 or angle_to_next > 10:
+                action[0] = pid_controller.update(distance_to_next)
 
 
             '''if not time % 50:
