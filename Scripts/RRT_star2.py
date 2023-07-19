@@ -19,7 +19,7 @@ class RRT_star():
         self.white = (255,255,255)
         self.step = step
         self.radius = radius
-        self.config_space = []
+        self.config_space = dict()
 
     def read_image(self, image):
         self.image = cv2.imread(image)
@@ -175,8 +175,6 @@ class RRT_star():
         for x in range(x0, x1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if (x, y) in self.config_space:
-                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
             if D > 0:
@@ -200,8 +198,6 @@ class RRT_star():
         for y in range(y0, y1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if (x, y) in self.config_space:
-                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
             if D > 0:
@@ -218,8 +214,6 @@ class RRT_star():
         for y in range(y0, y1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if (x, y) in self.config_space:
-                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
         cv2.imshow("plot", self.image)
@@ -231,8 +225,6 @@ class RRT_star():
         for x in range(x0, x1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if (x, y) in self.config_space:
-                    self.config_space.remove((x, y))
             else:
                 self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
         cv2.imshow("plot", self.image)
@@ -329,30 +321,28 @@ class RRT_star():
         cv2.imshow("plot", self.image)
         return True
 
-    def make_config_space(self, point):
-        threshold = 50
-        population = 0
-        midpoint = point
-        for i in range(point[0] - 2*self.radius, point[0] + 2*self.radius):
-            for j in range(point[1] - 2*self.radius, point[1] + 2*self.radius):
-                if i in range(0, self.width) and j in range(0, self.height):
-                    if (self.image[j, i][1] > 50):
-                        midpoint = (int((midpoint[0] + i)/2), int((midpoint[1] + j)/2))
+    def make_config_space(self, effect):
+        for x in range(self.width):
+            for y in range(self.height):
+                if (self.image[y, x] != (0, 0, 255)).any():
+                    self.config_space[(x, y)] = 1
 
-        for i in range(midpoint[0] - 2*self.radius, midpoint[0] + 2*self.radius):
-            for j in range(midpoint[1] - 2*self.radius, midpoint[1] + 2*self.radius):
-                if i in range(0, self.width) and j in range(0, self.height):
-                    if (self.image[j, i] != (0, 0, 255)).any() and (self.image[j, i][1] < 50):
-                        self.config_space.append((i, j))
+        for point in list(self.config_space.keys()):
+            for i in range(point[0] - effect, point[0] + effect):
+                for j in range(point[1] - effect, point[1] + effect):
+                    if i in range(0, self.width) and j in range(0, self.height):
+                        if (self.image[j, i] == (0, 0, 255)).all():
+                            self.config_space[point] += 1
+
 
     def run_loop(self):
-        self.make_config_space(self.starting_point)
+        self.make_config_space(2)
         number = 0
         rand_x = -1
         rand_y = -1
         parent = (-1, -1)
         while number < self.max_number:
-            (rand_x, rand_y) = random.choice(self.config_space)
+            (rand_x, rand_y) = random.choices(list(self.config_space.keys()), weights = self.config_space.values(), k = 1)[0]
             if (self.image[rand_y][rand_x] == self.red).all():
                 continue
             point0 = self.nearest_pixel(self.image, self.graph, (rand_x, rand_y))
@@ -390,7 +380,6 @@ class RRT_star():
                                     self.draw_line((i, j), point1, self.image)
 
             number += 1
-            self.make_config_space(point1)
         # cv2.imshow("plot", self.image)
         cv2.waitKey(10000)
         cv2.destroyAllWindows()

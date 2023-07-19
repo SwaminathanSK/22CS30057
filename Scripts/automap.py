@@ -140,6 +140,8 @@ if __name__ == "__main__":
     state = game.get_state()
     map = state.automap_buffer
 
+    print(state.game_variables)
+
     for i in range(map.shape[0]):
         for j in range(map.shape[1]):
             if (map[i][j] == (255, 0, 0)).all():
@@ -150,6 +152,6 @@ if __name__ == "__main__":
                 map[i][j] = (0, 0, 0)
     if map is not None:
         cv2.imshow("ViZDoom Automap Buffer", map)
-    cv2.waitKey(10000)
-    cv2.imwrite("processed_map.png", map)
-    cv2.destroyAllWindows()
+    if cv2.waitKey(0) == 'q':
+        cv2.imwrite("processed_map.png", map)
+        cv2.destroyAllWindows()

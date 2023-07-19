@@ -20,6 +20,7 @@ class RRT_star():
         self.step = step
         self.radius = radius
         self.config_space = []
+        self.path = []
 
     def read_image(self, image):
         self.image = cv2.imread(image)
@@ -46,7 +47,7 @@ class RRT_star():
         x1 = point1[0]
         y0 = point0[1]
         y1 = point1[1]
-        if (image[point1[1], point1[1]] == (0, 0, 255)).all() or (point1[0], point1[1]) == (point0[0], point0[1]):
+        if (image[point1[1], point1[1]] == (0, 0, 255)).all() or (point1[0], point1[1]) == (point0[0], point0[1]) or point1 in self.graph:
             return False
         elif (x1 - x0) == 0:
             if y0 > y1:
@@ -143,25 +144,26 @@ class RRT_star():
         y1 = point1[1]
         if (x1 - x0) == 0:
             if y0 > y1:
-                self.drawVer(x1, y1, x0, y0, image)
+                image = self.drawVer(x1, y1, x0, y0, image)
             else:
-                self.drawVer(x0, y0, x1, y1, image)
+                image = self.drawVer(x0, y0, x1, y1, image)
         elif (y1 - y0) == 0:
             if x0 > x1:
-                self.drawHor(x1, y1, x0, y0, image)
+                image = self.drawHor(x1, y1, x0, y0, image)
             else:
-                self.drawHor(x0, y0, x1, y1, image)
+                image = self.drawHor(x0, y0, x1, y1, image)
         else:
             if abs(y1 - y0) < abs(x1 - x0):
                 if x0 > x1:
-                    self.drawLineLow(x1, y1, x0, y0, image)
+                    image = self.drawLineLow(x1, y1, x0, y0, image)
                 else:
-                    self.drawLineLow(x0, y0, x1, y1, image)
+                    image = self.drawLineLow(x0, y0, x1, y1, image)
             else:
                 if y0 > y1:
-                    self.drawLineHigh(x1, y1, x0, y0, image)
+                    image = self.drawLineHigh(x1, y1, x0, y0, image)
                 else:
-                    self.drawLineHigh(x0, y0, x1, y1, image)
+                    image = self.drawLineHigh(x0, y0, x1, y1, image)
+        return self.image
 
     def drawLineLow(self, x0, y0, x1, y1, image):
         dx = x1 - x0
@@ -173,20 +175,21 @@ class RRT_star():
         D = (2*dy) - dx
         y = y0
         for x in range(x0, x1+1):
-            if self.image[y, x][1] < 50:
-                self.image[y, x] = (0, 50, 0)
+            if image[y, x][1] < 50:
+                image[y, x] = (0, 50, 0)
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
-                self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
+                image[y, x] = (0, image[y, x][1] + 1, 0)
             if D > 0:
                 y = y + yi
                 D = D + 2*(dy - dx)
             else:
                 D = D + 2*dy
+        self.image = image
         cv2.imshow("plot", self.image)
         cv2.waitKey(1)
-        return True
+        return image
 
     def drawLineHigh(self, x0, y0, x1, y1, image):
         dx = x1 - x0
@@ -198,43 +201,46 @@ class RRT_star():
         D = (2 * dx) - dy
         x = x0
         for y in range(y0, y1+1):
-            if self.image[y, x][1] < 50:
-                self.image[y, x] = (0, 50, 0)
+            if image[y, x][1] < 50:
+                image[y, x] = (0, 50, 0)
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
-                self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
+                image[y, x] = (0, image[y, x][1] + 1, 0)
             if D > 0:
                 x = x + xi
                 D = D + (2 * (dx - dy))
             else:
                 D = D + 2 * dx
+        self.image = image
         cv2.imshow("plot", self.image)
         cv2.waitKey(1)
-        return True
+        return image
 
     def drawVer(self, x0, y0, x1, y1, image):
         x = x0
         for y in range(y0, y1+1):
-            if self.image[y, x][1] < 50:
-                self.image[y, x] = (0, 50, 0)
+            if image[y, x][1] < 50:
+                image[y, x] = (0, 50, 0)
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
-                self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
+                image[y, x] = (0, image[y, x][1] + 1, 0)
+        self.image = image
         cv2.imshow("plot", self.image)
         cv2.waitKey(1)
-        return True
+        return image
 
     def drawHor(self, x0, y0, x1, y1, image):
         y = y0
         for x in range(x0, x1+1):
-            if self.image[y, x][1] < 50:
-                self.image[y, x] = (0, 50, 0)
+            if image[y, x][1] < 50:
+                image[y, x] = (0, 50, 0)
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
-                self.image[y, x] = (0, self.image[y, x][1] + 1, 0)
+                image[y, x] = (0, image[y, x][1] + 1, 0)
+        self.image = image
         cv2.imshow("plot", self.image)
         cv2.waitKey(1)
         return True
@@ -337,6 +343,25 @@ class RRT_star():
                     list.append((i, j))
         return list
 
+    def make_path(self, point):
+        path = []
+        point = point
+        while self.graph[point][1] != -1:
+            path.append(point)
+            point = self.graph[point][1]
+        return path
+
+    def send_path(self):
+        return self.path
+
+    def make_image(self, image):
+        img1 = cv2.imread(image)
+        path = self.send_path()
+        for i in range(len(path) - 1):
+            img1 = model.draw_line(path[i], path[i + 1], img1)
+
+        return img1
+
     def run_loop(self):
         self.config_space = self.make_config_space(self.image)
         number = 0
@@ -358,9 +383,9 @@ class RRT_star():
 
             self.graph[point1] = [self.graph[point0][0] + int(self.distance(point0, point1)), parent]
             cost = self.graph[point0][0] + int(self.distance(point0, point1))
-
-            for i in range(point1[0] - self.radius, point1[0] + self.radius):
-                for j in range(point1[1] - self.radius, point1[1] + self.radius):
+            b = int((np.log(len(self.config_space))/len(self.config_space))**0.5)
+            for i in range(point1[0] - self.radius*b, point1[0] + self.radius*b):
+                for j in range(point1[1] - self.radius*b, point1[1] + self.radius*b):
                     if (i in range(self.width)) and (j in range(self.height)):
                         if (i, j) in self.graph:
                             if cost > self.graph[(i, j)][0] + int(self.distance(point1, (i, j))):
@@ -371,8 +396,8 @@ class RRT_star():
             self.graph[point1] = [cost, parent]
             self.draw_line(point1, parent, self.image)
 
-            for i in range(point1[0] - self.radius, point1[0] + self.radius):
-                for j in range(point1[1] - self.radius, point1[1] + self.radius):
+            for i in range(point1[0] - self.radius*b, point1[0] + self.radius*b):
+                for j in range(point1[1] - self.radius*b, point1[1] + self.radius*b):
                     if (i in range(self.width)) and (j in range(self.height)):
                         if (i, j) in self.graph and (i, j) != point1:
                             if self.graph[(i, j)][0] > self.graph[point1][0] + int(self.distance(point1, (i, j))):
@@ -381,9 +406,11 @@ class RRT_star():
                                     self.graph[(i, j)] = [self.graph[point1][0] + int(self.distance(point1, (i, j))), point1]
                                     self.draw_line((i, j), point1, self.image)
 
+            if self.distance(point1, self.ending_point) == 0:
+                return (point1, self.graph)
+
             number += 1
         # cv2.imshow("plot", self.image)
-        cv2.waitKey(10000)
         cv2.destroyAllWindows()
 
 
