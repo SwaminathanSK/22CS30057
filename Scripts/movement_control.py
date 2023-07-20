@@ -185,11 +185,6 @@ if __name__ == "__main__":
 
             time = game.get_episode_time()
 
-??????? This will give an error. But this is the to do list
-1. Fix the PID pid_controller
-2. Try to make more of the green points as points on the graph
-3. Do something for Level 2
-
             '''if angle_to_next > 10:
                 action[2] = -3
             elif 5 < angle_to_next and angle_to_next < 10:

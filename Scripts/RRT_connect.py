@@ -21,7 +21,6 @@ class RRT_star():
         self.step = step
         self.radius = radius
         self.config_space = []
-        self.parent = starting_point
 
     def read_image(self, image):
         self.image = cv2.imread(image)
@@ -176,10 +175,6 @@ class RRT_star():
         y = y0
         for x in range(x0, x1+1):
             if self.image[y, x][1] < 50:
-                if self.parent in self.graph:
-                    self.graph[(x, y)] = [0, self.parent]
-                else:
-                    self.graph_prime[(x, y)] = [0, self.parent]
                 self.image[y, x] = (0, 50, 0)
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
@@ -206,10 +201,6 @@ class RRT_star():
         for y in range(y0, y1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if self.parent in self.graph:
-                    self.graph[(x, y)] = [0, self.parent]
-                else:
-                    self.graph_prime[(x, y)] = [0, self.parent]
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
@@ -228,10 +219,6 @@ class RRT_star():
         for y in range(y0, y1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if self.parent in self.graph:
-                    self.graph[(x, y)] = [0, self.parent]
-                else:
-                    self.graph_prime[(x, y)] = [0, self.parent]
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
@@ -245,10 +232,6 @@ class RRT_star():
         for x in range(x0, x1+1):
             if self.image[y, x][1] < 50:
                 self.image[y, x] = (0, 50, 0)
-                if self.parent in self.graph:
-                    self.graph[(x, y)] = [0, self.parent]
-                else:
-                    self.graph_prime[(x, y)] = [0, self.parent]
                 if (x, y) in self.config_space:
                     self.config_space.remove((x, y))
             else:
@@ -390,8 +373,8 @@ class RRT_star():
             if not self.allowed(self.image, self.graph, point0, point1):
                 continue
 
-            self.parent = point0
-            self.graph[point1] = [0, self.parent]
+            parent = point0
+            self.graph[point1] = [0, parent]
             self.draw_line(point0, point1, self.image)
 
             new_random_prime = self.ending_point
@@ -402,7 +385,6 @@ class RRT_star():
 
                 if self.allowed(self.image, self.graph_prime, new_node_prime, new_near_prime):
                     self.graph_prime[new_node_prime] = [0, new_near_prime]
-                    self.parent = new_near_prime
                     self.draw_line(new_node_prime, new_near_prime, self.image)
 
                     self.config_space = self.make_config_space(new_node_prime)
@@ -411,7 +393,6 @@ class RRT_star():
                         node_new_prim2 = self.new_point(point1, new_node_prime, self.image, self.step)
                         if node_new_prim2 and self.allowed(self.image, self.graph_prime, node_new_prim2, new_node_prime):
                             self.graph_prime[node_new_prim2] = [0, new_node_prime]
-                            self.parent = new_node_prime
                             self.draw_line(new_node_prime, node_new_prim2, self.image)
                             # self.make_config_space(node_new_prim2)
                         else:
@@ -420,10 +401,10 @@ class RRT_star():
                         if node_new_prim2 == new_node_prime:
                             break
 
-
-            list_mid = self.graph_prime
-            self.graph_prime = self.graph
-            self.graph = list_mid
+            if len(self.graph_prime) < len(self.graph):
+                list_mid = self.graph_prime
+                self.graph_prime = self.graph
+                self.graph = list_mid
             # self.make_config_space(point1)
 
 
