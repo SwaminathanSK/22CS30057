@@ -6,7 +6,7 @@ import os
 import cv2
 
 class RRT_star():
-    def __init__(self, starting_point, ending_point, max_number, step, radius):
+    def __init__(self, starting_point, ending_point, max_number, step, radius, config_space):
         self.starting_point = starting_point
         self.ending_point = ending_point
         self.max_number = max_number
@@ -19,8 +19,51 @@ class RRT_star():
         self.white = (255,255,255)
         self.step = step
         self.radius = radius
-        self.config_space = []
+        self.my_space = config_space
+        self.config_space = config_space
         self.path = []
+        self.complete_space = []
+
+    def make_complete_space(self):
+        list = []
+        for i in range(self.width):
+            for j in range(self.height):
+                list.append((i, j))
+        return list
+
+    def mid_point(self, pointa, pointb):
+        mp = (int((pointa[0]+pointb[0])/2), int((pointa[1]+pointb[1])/2))
+        return mp
+
+    def gaussian_sampling(self, mean_point, cov = np.array([[150, 0], [0, 150]])):
+        rand = np.random.multivariate_normal(mean_point, cov)
+        rand = (int(rand[0]), int(rand[1]))
+        return rand
+
+    def uniform_sampling(self):
+        rand = random.choices(self.complete_space, k = 1)[0]
+        return rand
+
+    def combined_choice(self, weight1, weight2):
+        choice = [0, 1]
+        return random.choices(choice, (weight1, weight2), k = 1)[0]
+
+    def bridge_test(self):
+        pointa = random.choice(self.complete_space)
+        if pointa not in self.config_space:
+            pointb = self.gaussian_sampling(pointa)
+            if pointb not in self.config_space:
+                pointc = self.mid_point(pointa, pointb)
+                return pointc
+        return False
+
+    def combined_sampling(self):
+        choice = self.combined_choice(10, 5)
+        if choice == 0:
+            pointc = random.choice(self.my_space)
+        elif choice == 1:
+            pointc = random.choice(self.config_space)
+        return pointc
 
     def read_image(self, image):
         self.image = cv2.imread(image)
@@ -47,7 +90,9 @@ class RRT_star():
         x1 = point1[0]
         y0 = point0[1]
         y1 = point1[1]
-        if (image[point1[1], point1[1]] == (0, 0, 255)).all() or (point1[0], point1[1]) == (point0[0], point0[1]) or point1 in self.graph:
+        if x1 not in range(self.width) or y1 not in range(self.height):
+            return False
+        if (image[point1[1], point1[0]] == (0, 0, 255)).all() or ((point1[0], point1[1]) == (point0[0], point0[1])):
             return False
         elif (x1 - x0) == 0:
             if y0 > y1:
@@ -369,9 +414,7 @@ class RRT_star():
         rand_y = -1
         parent = (-1, -1)
         while number < self.max_number:
-            (rand_x, rand_y) = random.choice(self.config_space)
-            if (self.image[rand_y][rand_x] == self.red).all():
-                continue
+            (rand_x, rand_y) = self.combined_sampling()
             point0 = self.nearest_pixel(self.image, self.graph, (rand_x, rand_y))
             if (rand_x, rand_y) in self.graph:
                 continue
@@ -384,6 +427,7 @@ class RRT_star():
             self.graph[point1] = [self.graph[point0][0] + int(self.distance(point0, point1)), parent]
             cost = self.graph[point0][0] + int(self.distance(point0, point1))
             b = int((np.log(len(self.config_space))/len(self.config_space))**0.5)
+            b = 1
             for i in range(point1[0] - self.radius*b, point1[0] + self.radius*b):
                 for j in range(point1[1] - self.radius*b, point1[1] + self.radius*b):
                     if (i in range(self.width)) and (j in range(self.height)):
@@ -406,7 +450,7 @@ class RRT_star():
                                     self.graph[(i, j)] = [self.graph[point1][0] + int(self.distance(point1, (i, j))), point1]
                                     self.draw_line((i, j), point1, self.image)
 
-            if self.distance(point1, self.ending_point) == 0:
+            if self.distance(point1, self.ending_point) < 20:
                 return (point1, self.graph)
 
             number += 1
