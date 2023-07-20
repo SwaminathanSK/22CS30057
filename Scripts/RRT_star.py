@@ -6,7 +6,7 @@ import os
 import cv2
 
 class RRT_star():
-    def __init__(self, starting_point, ending_point, max_number, step, radius):
+    def __init__(self, starting_point, ending_point, max_number, step, radius, image):
         self.starting_point = starting_point
         self.ending_point = ending_point
         self.max_number = max_number
@@ -21,11 +21,10 @@ class RRT_star():
         self.radius = radius
         self.config_space = []
         self.path = []
-
-    def read_image(self, image):
         self.image = cv2.imread(image)
         self.height = self.image.shape[0]
         self.width = self.image.shape[1]
+
 
     def distance(self, point1, point2):
         return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
@@ -187,8 +186,8 @@ class RRT_star():
             else:
                 D = D + 2*dy
         self.image = image
-        cv2.imshow("plot", self.image)
-        cv2.waitKey(1)
+        # cv2.imshow("plot", self.image)
+        # cv2.waitKey(1)
         return image
 
     def drawLineHigh(self, x0, y0, x1, y1, image):
@@ -213,8 +212,8 @@ class RRT_star():
             else:
                 D = D + 2 * dx
         self.image = image
-        cv2.imshow("plot", self.image)
-        cv2.waitKey(1)
+        # cv2.imshow("plot", self.image)
+        # cv2.waitKey(1)
         return image
 
     def drawVer(self, x0, y0, x1, y1, image):
@@ -227,8 +226,8 @@ class RRT_star():
             else:
                 image[y, x] = (0, image[y, x][1] + 1, 0)
         self.image = image
-        cv2.imshow("plot", self.image)
-        cv2.waitKey(1)
+        # cv2.imshow("plot", self.image)
+        # cv2.waitKey(1)
         return image
 
     def drawHor(self, x0, y0, x1, y1, image):
@@ -241,8 +240,8 @@ class RRT_star():
             else:
                 image[y, x] = (0, image[y, x][1] + 1, 0)
         self.image = image
-        cv2.imshow("plot", self.image)
-        cv2.waitKey(1)
+        # cv2.imshow("plot", self.image)
+        # cv2.waitKey(1)
         return True
 
     def erase_line(self, point0, point1, image):
@@ -290,7 +289,7 @@ class RRT_star():
                 D = D + 2*(dy - dx)
             else:
                 D = D + 2*dy
-        cv2.imshow("plot", self.image)
+        # cv2.imshow("plot", self.image)
         return True
 
     def eraseLineHigh(self, x0, y0, x1, y1, image):
@@ -312,7 +311,7 @@ class RRT_star():
                 D = D + (2 * (dx - dy))
             else:
                 D = D + 2 * dx
-        cv2.imshow("plot", self.image)
+        # cv2.imshow("plot", self.image)
         return True
 
     def eraseVer(self, x0, y0, x1, y1, image):
@@ -322,7 +321,7 @@ class RRT_star():
                 self.image[y, x] = (0, 0, 0)
             else:
                 self.image[y, x] = (0, self.image[y, x][1] - 1, 0)
-        cv2.imshow("plot", self.image)
+        # cv2.imshow("plot", self.image)
         return True
 
     def eraseHor(self, x0, y0, x1, y1, image):
@@ -332,7 +331,7 @@ class RRT_star():
                 self.image[y, x] = (0, 0, 0)
             else:
                 self.image[y, x] = (0, self.image[y, x][1] - 1, 0)
-        cv2.imshow("plot", self.image)
+        # cv2.imshow("plot", self.image)
         return True
 
     def make_config_space(self, image):
@@ -410,8 +409,11 @@ class RRT_star():
                 return (point1, self.graph)
 
             number += 1
-        # cv2.imshow("plot", self.image)
-        cv2.destroyAllWindows()
+
+            cv2.waitKey(1)
+            cv2.imshow("plot", self.image)
+        if cv2.waitKey(0) == 'q':
+            cv2.destroyAllWindows()
 
 
 
