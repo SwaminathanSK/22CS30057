@@ -1,3 +1,6 @@
+#### Tried using the generated points as connections
+
+
 import RRT_star as RRT_star
 import RRT as RRT
 import RRT_star2

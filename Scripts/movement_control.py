@@ -32,7 +32,7 @@ def on_press(key):
         pass
 
 def achieved(agent_x, agent_y, target_x, target_y):
-    if get_distance_to_next(agent_x, agent_y, target_x, target_y) < 20:
+    if get_distance_to_next(agent_x, agent_y, target_x, target_y) < 100:
         return True
     return False
 
@@ -134,8 +134,8 @@ if __name__ == "__main__":
     # value is the speed of movement in a given direction (100 is close to the maximum speed).
     action = [0, 0, 0, 0]  # floating point values can be used
 
-    path = [(385, 177), (384, 177), (382, 175), (382, 170), (385, 170), (386, 171), (412, 170), (414, 172), (419, 177), (446, 170), (449, 177), (450, 178), (452, 213)]
-
+    path = [(452, 213), (450, 211), (446, 201), (451, 180), (449, 178), (450, 175), (440, 173), (403, 168), (399, 169), (391, 170), (384, 173), (385, 190), (383, 193), (376, 199), (373, 200), (346, 202), (346, 218), (346, 226), (345, 232), (297, 234), (290, 237), (290, 237), (289, 258), (281, 292), (247, 300), (207, 294), (207, 294), (207, 294), (207, 294), (207, 294), (207, 294), (207, 294), (207, 293), (170, 331), (172, 351), (216, 357), (256, 353), (282, 364), (331, 356), (377, 359), (397, 359), (405, 359), (414, 363), (443, 363), (504, 369)]
+    path = [(504, 369), (443, 363), (414, 363), (405, 359), (397, 359), (377, 359), (331, 356), (282, 364), (256, 353), (216, 357), (172, 351), (170, 331), (207, 293), (247, 300), (281, 292), (289, 258), (290, 237), (297, 234), (345, 232), (346, 202), (373, 200), (376, 199), (385, 190), (384, 173), (399, 169), (403, 168), (450, 175), (449, 178), (451, 180), (446, 201), (450, 211), (452, 213)]
 
     path = path[::-1]
 
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     i = 3
     flag = 0
-    target = (11*path[i][0] - 4939, -11*path[i][1] + 2279)
+    target = (10.92*path[i][0] - 4939, -10.92*path[i][1] + 2279)
 
     while True:
         state = game.get_state()
@@ -165,6 +165,9 @@ if __name__ == "__main__":
             x_position = state.game_variables[0]
             y_position = state.game_variables[1]
             angle_degrees = state.game_variables[2]
+
+            buffer = 3
+            number = 0
 
             factor = (976/87)
 
@@ -181,30 +184,50 @@ if __name__ == "__main__":
                     flag = 1
                     game.close()
                     break
-                target = (11 * path[i][0] - 4939, -11 * path[i][1] + 2279)
+                target = (10.92*path[i][0] - 4939, -10.92*path[i][1] + 2279)
 
             time = game.get_episode_time()
 
-            '''if angle_to_next > 10:
+            if angle_to_next > 60:
                 action[2] = -3
-            elif 5 < angle_to_next and angle_to_next < 10:
-                action[2] = 0
-                if distance_to_next > 20:
-                    action[0] = 5
-                else:
-                    action[0] = 0
-            elif -10 < angle_to_next and angle_to_next < 5:
-                action[2] = 0
-                if distance_to_next > 20:
-                    action[0] = 5
-                else:
-                    action[0] = 0
-            elif angle_to_next < -10:
-                action[2] = 3'''
+                action[0] = -1
 
-            action[2] = -pid_controller.update(abs(angle_to_next))
+            elif angle_to_next > 10 and angle_to_next < 60:
+                if distance_to_next > 50:
+                    action[2] = -1
+                else:
+                    action[2] = -3
+
+
+            elif 0 < angle_to_next and angle_to_next < 10:
+                action[2] = 0
+                if distance_to_next > 30:
+                    action[0] = 10
+                else:
+                    action[0] = 1
+                    action[2] = 3
+
+            elif -10 < angle_to_next and angle_to_next < 0:
+                action[2] = 0
+                if distance_to_next > 50:
+                    action[0] = 10
+                else:
+                    action[0] = 1
+                    action[2] = -3
+
+            elif angle_to_next < -10 and angle_to_next > -60:
+                if distance_to_next > 50:
+                    action[2] = 1
+                else:
+                    action[2] = 3
+
+            elif angle_to_next < -60:
+                action[2] = 3
+                action[0] = -1
+
+            '''action[2] = -pid_controller.update(abs(angle_to_next))
             if angle_to_next < -10 or angle_to_next > 10:
-                action[0] = pid_controller.update(distance_to_next)
+                action[0] = pid_controller.update(distance_to_next)'''
 
 
             '''if not time % 50:
