@@ -68,8 +68,17 @@ def graph(node, parent, graph):
     graph[node] = [0, parent]
     return graph
 
+def position_update(current_positon, angle_degrees):
+    if angle_degrees == 270:
+        return ((current_positon[0], current_positon[1] - 20))
+    elif angle_degrees == 180:
+        return ((current_positon[0] - 20, current_positon[1]))
+    elif angle_degrees == 90:
+        return ((current_positon[0], current_positon[1] + 20))
+    elif angle_degrees == 0:
+        return ((current_positon[0] + 20, current_positon[1]))
 
-import cv2
+
 
 if __name__ == "__main__":
 
@@ -150,13 +159,19 @@ if __name__ == "__main__":
     episodes = 10
     sleep_time = 0.028
 
+
+
     while True:
         count = 0
-        graph_nodes = []
+        graph_nodes = {}
         parent = -1
         node = -1
 
-        start = 0
+        explored_max = None
+        not_explored = 4
+
+        abandoned = []
+
         # episode ends after you reach the key(end of game) or after a given time(300 seconds fixed in the config file)
         while not game.is_episode_finished():
             # Gets the state and possibly do something with it
@@ -165,6 +180,8 @@ if __name__ == "__main__":
             x_position = state.game_variables[0]
             y_position = state.game_variables[1]
             angle_degrees = state.game_variables[2]
+
+            current_positon = (x_position, y_position)
 
             # Shows the depth map of the current episode/level.
             depthmap = state.depth_buffer
@@ -179,51 +196,78 @@ if __name__ == "__main__":
             if labelsmap is not None:
                 cv2.imshow('ViZDoom Labels Buffer', labelsmap)'''
 
+            # EXPLORE THE BLOCK:
+            if not_explored == 4:
+
+                node = current_positon
+                if (position_update(node, int(angle_degrees))) not in abandoned:
+                        explored_max = (depthmap.argmax(), int(angle_degrees))
+                        graph_nodes[node] = [(position_update(node, int(angle_degrees)), 0)]
+                not_explored -= 1
+
+            elif not_explored > 0:
+                graph_nodes[node].append((position_update(node, int(angle_degrees)), 0))
+                action[0] = 0
+                action[2] = 90
+                not_explored -= 1
+                if explored_max[0] > depthmap.argmax() and position_update(node, int(angle_degrees)) not in abandoned:
+                    explored_max = (depthmap.argmax(), int(angle_degrees))
+                game.make_action(action)
+
+            else:
+                current = current_positon
+                target_angle = explored_max[1]
+                if depthmap.argmax() == 0 or position_update(position_update(node, int(angle_degrees)), int(angle_degrees)) in abandoned:
+                    explored_max = (255, 360)
+                    not_explored = 4
+                    abandoned.append(position_update(node, int(angle_degrees)))
+                elif int(angle_degrees) < target_angle:
+                    action[0] = 0
+                    action[2] = -90
+                    game.make_action(action)
+                elif int(angle_degrees) > target_angle:
+                    action[0] = 0
+                    action[2] = 90
+                    game.make_action(action)
+                elif int(angle_degrees) == target_angle:
+                    if get_distance_to_next(node[0], node[1], current[0], current[1]) < 20:
+                        action[0] = 10
+                        action[2] = 0
+                        game.make_action(action)
+                    else:
+                        not_explored = 4
 
 
-            if count % 50 == 0:
-                flag = 0
-                node = (x_position, y_position)
-                count+=1
-                parent = node
 
-
-            max = np.max(depthmap)
-            direction = depthmap.argmax()
-            direction = np.unravel_index(direction, depthmap.shape)
-            print(direction)
-            if max > 50:
+            '''if max > 10:
                 current = (x_position, y_position)
-                if (current, direction) not in graph_nodes:
-                    graph_nodes.append((current, direction))
+                for i in graph_nodes:
+                    if get_distance_to_next(i[0], i[1], current[0], current[1]) < 18 and i != parent:
+                        action[0] = 0
+                        action[2] = 1
+                        game.make_action(action)
+                        break
+                else:
                     if get_distance_to_next(node[0], node[1], current[0], current[1]) < 20:
                         if direction[1] * 2 > depthmap.shape[1] + 30:
                             print("Right")
                             action[0] = 5
-                            action[2] = 0
+                            action[2] = 1
                             game.make_action(action)
                         elif direction[1] * 2 < depthmap.shape[1] - 30:
                             print("Left")
                             action[0] = 5
-                            action[2] = 0
+                            action[2] = -1
                             game.make_action(action)
                         else:
                             print("Straight")
-                            action[0] = 30
+                            action[0] = 10
                             action[2] = 0
                             game.make_action(action)
 
                     elif get_distance_to_next(node[0], node[1], current[0], current[1]) > 20:
                         flag = 1
-                        count = 50
-                else:
-                    action[0] = 0
-                    action[2] = 90
-                    game.make_action(action)
-            else:
-                action[0] = 0
-                action[2] = 90
-                game.make_action(action)
+                        count = 50'''
 
 
 

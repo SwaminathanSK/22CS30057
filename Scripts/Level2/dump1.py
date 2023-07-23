@@ -66,7 +66,6 @@ def get_distance_to_next(agent_x, agent_y, target_x, target_y):
 
 def graph(node, parent, graph):
     graph[node] = [0, parent]
-    return graph
 
 
 import cv2
@@ -123,7 +122,7 @@ if __name__ == "__main__":
 
     game.add_available_button(vzd.Button.MOVE_FORWARD_BACKWARD_DELTA, 10)
     game.add_available_button(vzd.Button.MOVE_LEFT_RIGHT_DELTA, 5)
-    game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 90)
+    game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 5)
     game.add_available_button(vzd.Button.LOOK_UP_DOWN_DELTA)
 
     # Add game variables to the game before starting the episode
@@ -152,7 +151,7 @@ if __name__ == "__main__":
 
     while True:
         count = 0
-        graph_nodes = []
+        graph_nodes = {}
         parent = -1
         node = -1
 
@@ -171,7 +170,19 @@ if __name__ == "__main__":
             if depthmap is not None:
                 cv2.imshow('ViZDoom Depth Buffer', depthmap)
 
+
+
+            img_blur = cv2.GaussianBlur(depthmap, (3, 3), 0)
+            sobely = cv2.Sobel(src=depthmap, ddepth=cv2.CV_64F, dx=1, dy=0,
+                               ksize=5, scale=2**(2+1-5*2))  # Sobel Edge Detection on the Y axis
+
+            # sobely = (depthmap < 30)*(sobely)
+
+            cv2.imshow("edges", sobely)
+
             cv2.waitKey(int(sleep_time * 1000))
+
+
 
 
             '''# shows the segmented areas of any objects in the map
@@ -179,50 +190,49 @@ if __name__ == "__main__":
             if labelsmap is not None:
                 cv2.imshow('ViZDoom Labels Buffer', labelsmap)'''
 
-
-
             if count % 50 == 0:
                 flag = 0
                 node = (x_position, y_position)
                 count+=1
-                parent = node
 
+                # graph(node, parent, graph_nodes)
 
-            max = np.max(depthmap)
-            direction = depthmap.argmax()
-            direction = np.unravel_index(direction, depthmap.shape)
-            print(direction)
-            if max > 50:
+            white_where = 1
+            black_where = 0
+            black_count = 0
+            for i in range(sobely.shape[1]):
+                if sobely[0, i] > 0:
+                    index = (0, i)
+                if black_count == 40:
+                    break
+            print(np.unravel_index(sobely.argmax(), depthmap.shape))
+
+            # index = np.unravel_index(sobely.argmax(), depthmap.shape)
+
+            max = depthmap.argmax()
+            direction = index
+            print(sobely.argmax())
+            if max > 30:
                 current = (x_position, y_position)
-                if (current, direction) not in graph_nodes:
-                    graph_nodes.append((current, direction))
-                    if get_distance_to_next(node[0], node[1], current[0], current[1]) < 20:
-                        if direction[1] * 2 > depthmap.shape[1] + 30:
-                            print("Right")
-                            action[0] = 5
-                            action[2] = 0
-                            game.make_action(action)
-                        elif direction[1] * 2 < depthmap.shape[1] - 30:
-                            print("Left")
-                            action[0] = 5
-                            action[2] = 0
-                            game.make_action(action)
-                        else:
-                            print("Straight")
-                            action[0] = 30
-                            action[2] = 0
-                            game.make_action(action)
+                if get_distance_to_next(node[0], node[1], current[0], current[1]) < 50:
+                    if direction[1] * 2 < depthmap.shape[1] - 30:
+                        print("Left")
+                        action[0] = 5
+                        action[2] = -1
+                        game.make_action(action)
+                    else:
+                        print("Straight")
+                        action[0] = 10
+                        action[2] = 0
+                        game.make_action(action)
 
-                    elif get_distance_to_next(node[0], node[1], current[0], current[1]) > 20:
-                        flag = 1
-                        count = 50
-                else:
-                    action[0] = 0
-                    action[2] = 90
-                    game.make_action(action)
+                elif get_distance_to_next(node[0], node[1], current[0], current[1]) > 50:
+                    flag = 1
+                    count = 50
+
             else:
                 action[0] = 0
-                action[2] = 90
+                action[2] = 1
                 game.make_action(action)
 
 
