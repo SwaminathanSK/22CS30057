@@ -67,15 +67,9 @@ def get_distance_to_next(agent_x, agent_y, target_x, target_y):
 def graph(node, parent, graph):
     graph[node] = [0, parent]
 
-def position_update(current_positon, angle_degrees):
-    if angle_degrees == 270:
-        return ((current_positon[0], current_positon[1] - 20))
-    elif angle_degrees == 180:
-        return ((current_positon[0] - 20, current_positon[1]))
-    elif angle_degrees == 90:
-        return ((current_positon[0], current_positon[1] + 20))
-    elif angle_degrees == 0:
-        return ((current_positon[0] + 20, current_positon[1]))
+def position_update(current_position, angle_degrees, step):
+    result = (current_position[0] + step*math.cos(angle_degrees*math.pi/180), current_position[1] + step*math.sin(angle_degrees*math.pi/180))
+    return result
 
 
 
@@ -135,7 +129,7 @@ if __name__ == "__main__":
 
     game.add_available_button(vzd.Button.MOVE_FORWARD_BACKWARD_DELTA, 20)
     game.add_available_button(vzd.Button.MOVE_LEFT_RIGHT_DELTA, 5)
-    game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 5)
+    game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 90)
     game.add_available_button(vzd.Button.LOOK_UP_DOWN_DELTA)
 
     # Add game variables to the game before starting the episode
@@ -162,6 +156,8 @@ if __name__ == "__main__":
     episodes = 10
     sleep_time = 0.028
 
+    crossed = []
+
     while True:
         count = 0
         graph_nodes = {}
@@ -182,7 +178,7 @@ if __name__ == "__main__":
             depthmap = state.depth_buffer
             if depthmap is not None:
                 cv2.imshow('ViZDoom Depth Buffer', depthmap)
-            max = np.max(depthmap[:, :int(depthmap.shape[1]/2)-10])
+            max = np.max(depthmap[:, :int(depthmap.shape[1]/2)-40])
 
 
             img_blur = cv2.GaussianBlur(depthmap, (3, 3), 0)
@@ -204,7 +200,6 @@ if __name__ == "__main__":
                 cv2.imshow('ViZDoom Labels Buffer', labelsmap)'''
 
             if count % 50 == 0:
-                flag = 0
                 node = (x_position, y_position)
                 count+=1
 
@@ -226,28 +221,58 @@ if __name__ == "__main__":
             direction = index
             print(sobely.argmax())
             print(max)
-            if max > 15:
-                current = (x_position, y_position)
-                if get_distance_to_next(node[0], node[1], current[0], current[1]) < 50:
-                    if direction[1] * 2 < depthmap.shape[1] - 40:
-                        print("Left")
-                        action[0] = 1
-                        action[2] = -3
-                        game.make_action(action)
-                    else:
-                        print("Straight")
-                        action[0] = 20
-                        action[2] = 0
-                        game.make_action(action)
+            current = (x_position, y_position)
 
-                elif get_distance_to_next(node[0], node[1], current[0], current[1]) > 50:
-                    flag = 1
-                    count = 50
+            flag = 0
+            '''
+                       if depthmap[0][190] == 0:
+                            move_left_right = 5
+                        elif depthmap[0][depthmap.shape[1]-190] == 0:
+                            move_left_right = -5'''
+
+            move_left_right = 0
+
+
+
+
+            if max > 15:
+                next = position_update(current, angle_degrees, 10)
+                for i in crossed:
+                    if get_distance_to_next(next[0], next[1], i[0], i[1]) < 5:
+                        flag = 1
+                        break
+
+                if flag == 1:
+                    action[0] = 1
+                    action[1] = move_left_right
+                    action[2] = -10
+                    game.make_action(action)
+
+                else:
+                    if get_distance_to_next(node[0], node[1], current[0], current[1]) < 50:
+                        if direction[1] * 2 < depthmap.shape[1] - 40:
+                            print("Left")
+                            action[0] = 3
+                            action[1] = move_left_right
+                            action[2] = -3
+                            game.make_action(action)
+                        else:
+                            print("Straight")
+                            action[0] = 20
+                            action[1] = move_left_right
+                            action[2] = 0
+                            game.make_action(action)
+
+                    elif get_distance_to_next(node[0], node[1], current[0], current[1]) > 50:
+                        count = 50
+                crossed.append(current)
 
             else:
-                action[0] = 1
+                action[0] = 3
                 action[2] = 10
                 game.make_action(action)
+
+
 
 
 
