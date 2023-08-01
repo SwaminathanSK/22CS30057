@@ -158,6 +158,8 @@ if __name__ == "__main__":
 
     crossed = []
 
+    flag = 0
+
     while True:
         count = 0
         graph_nodes = {}
@@ -223,7 +225,7 @@ if __name__ == "__main__":
             print(max)
             current = (x_position, y_position)
 
-            flag = 0
+
             '''
                        if depthmap[0][190] == 0:
                             move_left_right = 5
@@ -232,11 +234,15 @@ if __name__ == "__main__":
 
             move_left_right = 0
 
-
-
+            if flag == 1 and max < 15:
+                action[0] = 0
+                action[1] = move_left_right
+                action[2] = -30
+                game.make_action(action)
 
             if max > 15:
                 next = position_update(current, angle_degrees, 10)
+                flag = 0
                 for i in crossed:
                     if get_distance_to_next(next[0], next[1], i[0], i[1]) < 5:
                         flag = 1
