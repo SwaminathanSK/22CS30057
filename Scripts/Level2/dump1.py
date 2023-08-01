@@ -67,6 +67,17 @@ def get_distance_to_next(agent_x, agent_y, target_x, target_y):
 def graph(node, parent, graph):
     graph[node] = [0, parent]
 
+def position_update(current_positon, angle_degrees):
+    if angle_degrees == 270:
+        return ((current_positon[0], current_positon[1] - 20))
+    elif angle_degrees == 180:
+        return ((current_positon[0] - 20, current_positon[1]))
+    elif angle_degrees == 90:
+        return ((current_positon[0], current_positon[1] + 20))
+    elif angle_degrees == 0:
+        return ((current_positon[0] + 20, current_positon[1]))
+
+
 
 import cv2
 
@@ -102,7 +113,9 @@ if __name__ == "__main__":
     game.set_automap_rotate(False)
     game.set_automap_render_textures(False)
 
+
     # game.set_render_hud(True)
+    game.set_render_weapon(False)
     game.set_render_hud(False)
     game.set_render_minimal_hud(False)
 
@@ -120,7 +133,7 @@ if __name__ == "__main__":
     game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 5)
     game.add_available_button(vzd.Button.LOOK_UP_DOWN_DELTA)'''
 
-    game.add_available_button(vzd.Button.MOVE_FORWARD_BACKWARD_DELTA, 10)
+    game.add_available_button(vzd.Button.MOVE_FORWARD_BACKWARD_DELTA, 20)
     game.add_available_button(vzd.Button.MOVE_LEFT_RIGHT_DELTA, 5)
     game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 5)
     game.add_available_button(vzd.Button.LOOK_UP_DOWN_DELTA)
@@ -169,7 +182,7 @@ if __name__ == "__main__":
             depthmap = state.depth_buffer
             if depthmap is not None:
                 cv2.imshow('ViZDoom Depth Buffer', depthmap)
-
+            max = np.max(depthmap[:, :int(depthmap.shape[1]/2)-10])
 
 
             img_blur = cv2.GaussianBlur(depthmap, (3, 3), 0)
@@ -209,20 +222,21 @@ if __name__ == "__main__":
 
             # index = np.unravel_index(sobely.argmax(), depthmap.shape)
 
-            max = depthmap.argmax()
+
             direction = index
             print(sobely.argmax())
-            if max > 30:
+            print(max)
+            if max > 15:
                 current = (x_position, y_position)
                 if get_distance_to_next(node[0], node[1], current[0], current[1]) < 50:
-                    if direction[1] * 2 < depthmap.shape[1] - 30:
+                    if direction[1] * 2 < depthmap.shape[1] - 40:
                         print("Left")
-                        action[0] = 5
-                        action[2] = -1
+                        action[0] = 1
+                        action[2] = -3
                         game.make_action(action)
                     else:
                         print("Straight")
-                        action[0] = 10
+                        action[0] = 20
                         action[2] = 0
                         game.make_action(action)
 
@@ -231,8 +245,8 @@ if __name__ == "__main__":
                     count = 50
 
             else:
-                action[0] = 0
-                action[2] = 1
+                action[0] = 1
+                action[2] = 10
                 game.make_action(action)
 
 

@@ -169,8 +169,10 @@ if __name__ == "__main__":
 
         explored_max = None
         not_explored = 4
+        explored_max_array = []
 
         abandoned = []
+        dist_to_virtual_obst = []
 
         # episode ends after you reach the key(end of game) or after a given time(300 seconds fixed in the config file)
         while not game.is_episode_finished():
@@ -201,8 +203,8 @@ if __name__ == "__main__":
 
                 node = current_positon
                 if (position_update(node, int(angle_degrees))) not in abandoned:
-                        explored_max = (depthmap.argmax(), int(angle_degrees))
-                        graph_nodes[node] = [(position_update(node, int(angle_degrees)), 0)]
+                    explored_max_array.append((depthmap.argmax(), int(angle_degrees)))
+                graph_nodes[node] = [(position_update(node, int(angle_degrees)), 0)]
                 not_explored -= 1
 
             elif not_explored > 0:
@@ -210,17 +212,31 @@ if __name__ == "__main__":
                 action[0] = 0
                 action[2] = 90
                 not_explored -= 1
-                if explored_max[0] > depthmap.argmax() and position_update(node, int(angle_degrees)) not in abandoned:
-                    explored_max = (depthmap.argmax(), int(angle_degrees))
+                if position_update(node, int(angle_degrees)) not in abandoned:
+                    explored_max_array.append((depthmap.argmax(), int(angle_degrees)))
                 game.make_action(action)
 
             else:
+                for j in abandoned:
+                    dist_to_virtual_obst.append(get_distance_to_next(current[0], current[1], j[0], j[1]))
+                min_dist = 100000
+                for x in dist_to_virtual_obst:
+                    if x < min_dist:
+                        min_dist = x
                 current = current_positon
+                explored_max = explored_max_array[0]
+                for i in explored_max_array:
+                    if i[0] < explored_max[0]:
+                        explored_max = i
+
                 target_angle = explored_max[1]
-                if depthmap.argmax() == 0 or position_update(position_update(node, int(angle_degrees)), int(angle_degrees)) in abandoned:
+                if depthmap.argmax() == 0 or min_dist < 30:
+                    explored_max_array = []
                     explored_max = (255, 360)
                     not_explored = 4
-                    abandoned.append(position_update(node, int(angle_degrees)))
+                    abandoned.append(current)
+                    abandoned.append(position_update(current, int(angle_degrees)))
+                    print(abandoned)
                 elif int(angle_degrees) < target_angle:
                     action[0] = 0
                     action[2] = -90
