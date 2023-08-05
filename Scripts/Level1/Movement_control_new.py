@@ -9,7 +9,7 @@ import math
 from pynput import keyboard
 
 class PIDController:
-    def __init__(self, kp=0.001, ki=0.001, kd=0.2):
+    def __init__(self, kp=1, ki=0.1, kd=0):
         self.kp = kp
         self.ki = ki
         self.kd = kd
@@ -21,6 +21,10 @@ class PIDController:
         derivative = error - self.prev_error
         self.prev_error = error
         return self.kp * error + self.ki * self.integral + self.kd * derivative
+
+
+def normalise(x):
+    return math.e**(-x)/(math.e**(-x) + 1)
 
 def on_press(key):
     try:
@@ -229,9 +233,14 @@ if __name__ == "__main__":
                 action[2] = 3
                 action[0] = -1
 
-            '''action[2] = -pid_controller.update(abs(angle_to_next))
-            if angle_to_next < -10 or angle_to_next > 10:
-                action[0] = pid_controller.update(distance_to_next)'''
+            '''
+
+            action[2] = normalise(pid_controller.update(abs(angle_to_next)))*10000
+            action[0] = pid_controller.update(distance_to_next)
+            # action[0] = 0
+            
+            '''
+
 
 
             '''if not time % 50:
